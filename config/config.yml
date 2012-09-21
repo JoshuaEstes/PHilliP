@@ -1,0 +1,7 @@
+username: jestesbitch
+password: ~
+server:   chat.freenode.net
+port:     6667
+debug:    true
+plugins:
+    - 'Phillip\CorePlugin'
