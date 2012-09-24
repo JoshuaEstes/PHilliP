@@ -13,12 +13,12 @@
         "symfony/console": "2.2.*",
         "symfony/dependency-injection": "2.2.*",
         "symfony/event-dispatcher": "2.2.*",
-        "symfony/process": "2.2.*",
         "symfony/yaml": "2.2.*"
     },
     "require-dev": {
-        "phpunit/phpunit": "*"
-    }
+        "phpunit/phpunit": "*",
+        "symfony/finder": "2.2.*"
+    },
     "autoload": {
         "psr-0": { "": "src/" }
     }

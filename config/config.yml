@@ -7,6 +7,9 @@ server:   chat.freenode.net
 port:     6667
 debug:    true
 
+trusted:
+    - f1gm3nt
+
 ###
 # Put the class here
 plugins:

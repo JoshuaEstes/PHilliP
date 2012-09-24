@@ -35,7 +35,7 @@ class Application
             ->register('output', 'Symfony\Component\Console\Output\ConsoleOutput');
         $this->container
             ->register('logger.handler', 'Monolog\Handler\StreamHandler')
-            ->addArgument('log/phillip.log')
+            ->addArgument('logs/phillip.log')
             ->addArgument(Logger::INFO);
         $this->container
             ->register('logger')
