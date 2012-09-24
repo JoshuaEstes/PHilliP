@@ -44,7 +44,7 @@ class Connection
         $server     = $this->container->getParameter('server');
         $port       = $this->container->getParameter('port');
 
-        if (!$this->socket = fsockopen($server, $port)) {
+        if (!$this->socket = pfsockopen($server, $port)) {
             throw new \RuntimeException(sprintf('Could not connect to "%s:%s"', $server, $port));
         }
         

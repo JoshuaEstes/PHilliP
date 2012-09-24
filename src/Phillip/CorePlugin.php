@@ -66,6 +66,20 @@ class CorePlugin extends AbstractPlugin
     public function onPrivmsg(FilterMessageEvent $event)
     {
         $request = $event->getRequest();
+        $container = $event->getContainer();
+        $container->get('output')->writeln(array(
+            sprintf('prefix: %s', $request->getPrefix()),
+            sprintf('command: %s', $request->getCommand()),
+            sprintf('middle: %s', $request->getMiddle()),
+            sprintf('trailing: %s', $request->getTrailing()),
+            sprintf('server: %s', $request->getServer()),
+            sprintf('parameters: %s', $request->getParameters()),
+            sprintf('user: %s', $request->getUser()),
+            sprintf('is Channel: %s', $request->isChannel() ? 'yes' : 'no'),
+            sprintf('is User: %s', $request->isUser() ? 'yes' : 'no'),
+            sprintf('From Server: %s', $request->isFromServer() ? 'yes' : 'no'),
+            sprintf('From User: %s', $request->isFromUser() ? 'yes' : 'no'),
+        ));
     }
 
 }

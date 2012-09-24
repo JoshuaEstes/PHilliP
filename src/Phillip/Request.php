@@ -151,6 +151,11 @@ class Request
         return null;
     }
 
+    public function isUser()
+    {
+        return (null !== $this->getUser());
+    }
+
     /**
      * @return string
      */

@@ -27,7 +27,7 @@ class Application
         /**
          * Yo dawg! Heard you like DI
          */
-        $this->container  = new ContainerBuilder();
+        $this->container = new ContainerBuilder();
         $this->container
             ->register('dispatcher', 'Symfony\Component\EventDispatcher\ContainerAwareEventDispatcher')
             ->addArgument($this->container);
@@ -60,24 +60,26 @@ class Application
     {
         $this->container->get('connection')->connect();
 
-
         do {
             $message = trim(fgets($this->container->get('connection')->getStream(), 512));
             if (empty($message)) {
                 continue;
             }
             $this->container->get('output')->writeln($message);
+
             $event = FilterMessageEvent::create()
-                ->setRequest(Request::createFromMessage($message))
-                ->setResponse(new Response())
+                ->setRequest($this->container->get('request')->setMessage($message))
+                ->setResponse($this->container->get('response'))
                 ->setContainer($this->container);
+
             $this->container->get('dispatcher')->dispatch('irc.message', $event);
+
             $command = $event->getRequest()->getCommand();
             $this->container->get('dispatcher')->dispatch('command.'.$command, $event);
+
             if ($event->getResponse()->isValid()) {
                 $response = (string) $event->getResponse();
-                var_dump($response);
-
+                $this->container->get('output')->writeln($response);
                 $this->container->get('connection')->writeln($response);
             }
         } while (!feof($this->container->get('connection')->getStream()));
