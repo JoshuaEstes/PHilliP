@@ -27,13 +27,14 @@ class Compiler
             ->ignoreVCS(true)
             ->name('*.php')
             ->notName('Compiler.php')
+            //->exclude(array('Tests', 'phpunit'))
             ->exclude(array('Tests'))
             ->in(__DIR__ . '/../..');
 
         foreach ($finder as $file) {
             $path = str_replace(dirname(dirname(__DIR__)) . DIRECTORY_SEPARATOR, '', $file->getRealPath());
-            $phar->addFromString($path, php_strip_whitespace($file->getRealPath()) . "\n");
             echo sprintf("+ %s\n", $path);
+            $phar->addFromString($path, php_strip_whitespace($file->getRealPath()));
         }
         $bin = php_strip_whitespace(__DIR__ . '/../../bot');
         $bin = preg_replace('{^#!/usr/bin/env php\s*}', '', $bin);
