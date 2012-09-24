@@ -2,18 +2,46 @@
 
 namespace Phillip;
 
+use Phillip\Event\FilterMessageEvent;
+
+/**
+ * Plugins must extend the AbstractPlugin class
+ *
+ * @author Joshua Estes
+ */
 class CorePlugin extends AbstractPlugin
 {
 
+    /**
+     * Events that need this class is listening for
+     */
     static public function getSubscribedEvents()
     {
         return array(
+            'connect'         => array('onConnect'),
             'command.ping'    => array('onPing'),
             'command.privmsg' => array('onPrivmsg'),
         );
     }
 
-    public function onPing($event)
+    /**
+     * @param FilterMessageEvent $event
+     */
+    public function onConnect(FilterMessageEvent $event)
+    {
+        $container  = $event->getContainer();
+        $username   = $container->getParameter('username');
+        $hostname   = $container->getParameter('hostname');
+        $servername = $container->getParameter('servername');
+        $realname   = $container->getParameter('realname');
+    }
+
+    /**
+     * Send a pong back to the server
+     *
+     * @param FilterMessageEvent $event
+     */
+    public function onPing(FilterMessageEvent $event)
     {
         $event
             ->getResponse()
@@ -21,18 +49,12 @@ class CorePlugin extends AbstractPlugin
             ->setParameters($event->getRequest()->getTrailing());
     }
 
-    public function onPrivmsg($event)
+    /**
+     * @param FilterMessageEvent
+     */
+    public function onPrivmsg(FilterMessageEvent $event)
     {
         $request = $event->getRequest();
-        var_dump(
-            $request->getTrailing(),
-            $request->getServer(),
-            $request->getParameters(),
-            $request->isChannel(),
-            $request->isFromServer(),
-            $request->isFromUser(),
-            $request->getUser()
-        );
     }
 
 }

@@ -2,6 +2,9 @@
 
 namespace Phillip;
 
+/**
+ * @author Joshua Estes
+ */
 class Response
 {
 
@@ -13,6 +16,17 @@ class Response
         $r = new self();
         $r->setCommand($command)->setParameters($parameters);
         return $r;
+    }
+
+    public function setContainer($container)
+    {
+        $this->container = $container;
+        return $this;
+    }
+
+    public function getContainer()
+    {
+        return $this->container;
     }
 
     public function setCommand($command)
@@ -43,6 +57,13 @@ class Response
     public function isValid()
     {
         return (null !== $this->command);
+    }
+
+    public function send()
+    {
+        if (!$this->isValid()) {
+            throw \Exception(sprintf('"%s" is invalid and cannot be send to server.',$this->__toString()));
+        }
     }
 
     public function __toString()

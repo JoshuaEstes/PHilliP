@@ -1,7 +1,14 @@
 username: jestesbitch
 password: ~
+hostname: example.com
+servername: example.com
+realname: n/a
 server:   chat.freenode.net
 port:     6667
 debug:    true
+
+###
+# Put the class here
 plugins:
+    # @see src/Phillip/CorePlugin.php
     - 'Phillip\CorePlugin'

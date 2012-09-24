@@ -16,6 +16,9 @@
         "symfony/process": "2.2.*",
         "symfony/yaml": "2.2.*"
     },
+    "require-dev": {
+        "phpunit/phpunit": "*"
+    }
     "autoload": {
         "psr-0": { "": "src/" }
     }

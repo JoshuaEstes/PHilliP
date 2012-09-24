@@ -29,6 +29,23 @@ class Request
     }
 
     /**
+     * Parse the incoming request
+     */
+    protected function parse()
+    {
+        preg_match(self::$RE_MSG, $this->getMessage(), $matches);
+        foreach ($matches as $k => $v) {
+            $matches[$k] = trim(str_replace(array(chr(10), chr(13)), '', $matches[$k]));
+        }
+        if (count($matches)) {
+            $this->prefix   = $matches[1];
+            $this->command  = strtolower($matches[2]);
+            $this->middle   = $matches[3] ? explode(' ', $matches[3]) : null;
+            $this->trailing = isset($matches[4]) ? $matches[4] : null;
+        }
+    }
+
+    /**
      * @param string $message
      */
     public static function createFromMessage($message)
@@ -53,20 +70,6 @@ class Request
     public function getMessage()
     {
         return $this->message;
-    }
-
-    public function parse()
-    {
-        preg_match(self::$RE_MSG, $this->getMessage(), $matches);
-        foreach ($matches as $k => $v) {
-            $matches[$k] = trim(str_replace(array(chr(10), chr(13)), '', $matches[$k]));
-        }
-        if (count($matches)) {
-            $this->prefix   = $matches[1];
-            $this->command  = strtolower($matches[2]);
-            $this->middle   = $matches[3] ? explode(' ', $matches[3]) : null;
-            $this->trailing = isset($matches[4]) ? $matches[4] : null;
-        }
     }
 
     /**
@@ -111,31 +114,46 @@ class Request
         return $this->parameters;
     }
 
+    /**
+     * @return boolean
+     */
     public function isChannel()
     {
         return (bool) strspn($this->middle[0], '#&!+', 0, 1) >= 1;
     }
 
+    /**
+     * @return boolean
+     */
     public function isFromServer()
     {
         return !$this->isFromUser();
     }
 
+    /**
+     * @return boolean
+     */
     public function isFromUser()
     {
         return (bool) preg_match(self::$RE_SENDER, $this->getPrefix());
     }
 
+    /**
+     * @return null|string
+     */
     public function getUser()
     {
         if ($this->isFromUser()) {
-            preg_match(self::$RE_SENDER, $this->getPrefix());
+            preg_match(self::$RE_SENDER, $this->getPrefix(), $matches);
             return $matches[1];
         }
 
         return null;
     }
 
+    /**
+     * @return string
+     */
     public function __toString()
     {
         return $this->getMessage();

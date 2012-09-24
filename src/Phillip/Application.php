@@ -16,6 +16,8 @@ use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 
 /**
+ * The main application that runs the IRC bot
+ *
  * @author Joshua Estes
  */
 class Application
@@ -40,11 +42,20 @@ class Application
 
     public function run()
     {
-        $server = $this->configuration['server'];
-        $port   = $this->configuration['port'];
-        $this->socket = new StreamOutput(fsockopen($server, $port));
-        $this->socket->writeln((string) Response::create('user', array($this->configuration['username'], 'example.com', 'example.com', 'jestes')));
-        $this->socket->writeln((string) Response::create('nick', array($this->configuration['username'])));
+        $server     = $this->container->getParameter('server');
+        $port       = $this->container->getParameter('port');
+
+        if (!$this->socket = new StreamOutput(fsockopen($server, $port))) {
+            throw new \RuntimeException($this->output->wrintln(sprintf('Could not connect to "%s:%s"', $server, $port)));
+        }
+
+        $this->dispatcher->dispatch('connect', FilterMessageEvent::create()
+            ->setResponse(new Response())
+            ->setContainer($this->dispatcher->getContainer())
+        );
+
+        $this->socket->writeln((string) Response::create('user', array($username, $hostname, $servername, $realname)));
+        $this->socket->writeln((string) Response::create('nick', array($username)));
         do {
             $message = trim(fgets($this->socket->getStream(), 512));
             if (empty($message)) {
@@ -80,6 +91,9 @@ class Application
         $locator             = new FileLocator($configDirectories);
         $configurationLoader = new ConfigurationLoader($locator);
         $this->configuration = $configurationLoader->load($configurationLoader->getLocator()->locate('config.yml', null, true));
+        foreach ($this->configuration as $key => $value) {
+            $this->container->setParameter($key, $value);
+        }
     }
 
     /**
