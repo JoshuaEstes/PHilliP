@@ -94,6 +94,7 @@ class Application
         $configDirectories = array(
             getenv('HOME') . '/.ircbot',
             __DIR__ . '/../../config',
+            getcwd() . '/config',
         );
 
         $locator             = new FileLocator($configDirectories);
