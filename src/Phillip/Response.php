@@ -64,6 +64,8 @@ class Response
         if (!$this->isValid()) {
             throw \Exception(sprintf('"%s" is invalid and cannot be send to server.',$this->__toString()));
         }
+
+        $this->getContainer()->get('connection')->writeln($this->__toString());
     }
 
     public function __toString()

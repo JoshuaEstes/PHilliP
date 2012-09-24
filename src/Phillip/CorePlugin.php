@@ -3,6 +3,7 @@
 namespace Phillip;
 
 use Phillip\Event\FilterMessageEvent;
+use Phillip\Response;
 
 /**
  * Plugins must extend the AbstractPlugin class
@@ -25,6 +26,9 @@ class CorePlugin extends AbstractPlugin
     }
 
     /**
+     * When we first connect to a server we need to send the
+     * USER and NICK commends
+     *
      * @param FilterMessageEvent $event
      */
     public function onConnect(FilterMessageEvent $event)
@@ -34,6 +38,13 @@ class CorePlugin extends AbstractPlugin
         $hostname   = $container->getParameter('hostname');
         $servername = $container->getParameter('servername');
         $realname   = $container->getParameter('realname');
+
+        Response::create('user', array($username, $hostname, $servername, $realname))
+            ->setContainer($container)
+            ->send();
+        Response::create('nick', $username)
+            ->setContainer($container)
+            ->send();
     }
 
     /**

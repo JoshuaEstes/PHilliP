@@ -7,13 +7,9 @@ use Phillip\Event\FilterMessageEvent;
 use Phillip\Request;
 use Phillip\Response;
 use Symfony\Component\Config\FileLocator;
-use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\StreamOutput;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\EventDispatcher\ContainerAwareEventDispatcher;
-use Symfony\Component\Process\PhpProcess;
 use Monolog\Logger;
-use Monolog\Handler\StreamHandler;
 
 /**
  * The main application that runs the IRC bot
@@ -23,58 +19,68 @@ use Monolog\Handler\StreamHandler;
 class Application
 {
 
-    protected $output;
     protected $socket;
-    protected $configuration;
-    protected $dispatcher;
     protected $container;
-    protected $logger;
 
     public function __construct()
     {
+        /**
+         * Yo dawg! Heard you like DI
+         */
         $this->container  = new ContainerBuilder();
-        $this->dispatcher = new ContainerAwareEventDispatcher($this->container);
-        $this->output     = new ConsoleOutput();
-        $this->logger     = new Logger('phillip');
+        $this->container
+            ->register('dispatcher', 'Symfony\Component\EventDispatcher\ContainerAwareEventDispatcher')
+            ->addArgument($this->container);
+        $this->container
+            ->register('output', 'Symfony\Component\Console\Output\ConsoleOutput');
+        $this->container
+            ->register('logger.handler', 'Monolog\Handler\StreamHandler')
+            ->addArgument('log/phillip.log')
+            ->addArgument(Logger::INFO);
+        $this->container
+            ->register('logger')
+            ->addArgument('phillip')
+            ->addMethodCall('setHandler', array('%logger.handler%'));
+        $this->container
+            ->register('connection', 'Phillip\Connection')
+            ->setFactoryClass('Phillip\Connection')
+            ->setFactoryMethod('getInstance')
+            ->addMethodCall('setContainer', array($this->container));
+        $this->container
+            ->register('request', 'Phillip\Request');
+        $this->container
+            ->register('response', 'Phillip\Response')
+            ->addMethodCall('setContainer', array($this->container));
+
         $this->loadConfiguration();
         $this->loadPlugins();
     }
 
     public function run()
     {
-        $server     = $this->container->getParameter('server');
-        $port       = $this->container->getParameter('port');
+        $this->container->get('connection')->connect();
 
-        if (!$this->socket = new StreamOutput(fsockopen($server, $port))) {
-            throw new \RuntimeException($this->output->wrintln(sprintf('Could not connect to "%s:%s"', $server, $port)));
-        }
 
-        $this->dispatcher->dispatch('connect', FilterMessageEvent::create()
-            ->setResponse(new Response())
-            ->setContainer($this->dispatcher->getContainer())
-        );
-
-        $this->socket->writeln((string) Response::create('user', array($username, $hostname, $servername, $realname)));
-        $this->socket->writeln((string) Response::create('nick', array($username)));
         do {
-            $message = trim(fgets($this->socket->getStream(), 512));
+            $message = trim(fgets($this->container->get('connection')->getStream(), 512));
             if (empty($message)) {
                 continue;
             }
-            $this->output->writeln($message);
+            $this->container->get('output')->writeln($message);
             $event = FilterMessageEvent::create()
                 ->setRequest(Request::createFromMessage($message))
                 ->setResponse(new Response())
-                ->setContainer($this->dispatcher->getContainer());
-            $this->dispatcher->dispatch('irc.message', $event);
+                ->setContainer($this->container);
+            $this->container->get('dispatcher')->dispatch('irc.message', $event);
             $command = $event->getRequest()->getCommand();
-            $this->dispatcher->dispatch('command.'.$command, $event);
+            $this->container->get('dispatcher')->dispatch('command.'.$command, $event);
             if ($event->getResponse()->isValid()) {
                 $response = (string) $event->getResponse();
                 var_dump($response);
-                $this->socket->writeln($response);
+
+                $this->container->get('connection')->writeln($response);
             }
-        } while (!feof($this->socket->getStream()));
+        } while (!feof($this->container->get('connection')->getStream()));
     }
 
     /**
@@ -109,7 +115,7 @@ class Application
             if (!class_implements('\Phillip\AbstractPlugin')) {
                 throw new \RuntimeException(sprintf('Plugin must extend "Phillip\AbstractPlugin"'));
             }
-            $this->dispatcher->addSubscriber(new $plugin());
+            $this->container->get('dispatcher')->addSubscriber(new $plugin());
         }
     }
 
