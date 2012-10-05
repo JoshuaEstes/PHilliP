@@ -17,8 +17,6 @@
         "kriswallsmith/spork": "dev-master"
     },
     "require-dev": {
-        "phpunit/phpunit": "*",
-        "symfony/finder": "2.2.*"
     },
     "autoload": {
         "psr-0": { "": "src/" }

@@ -66,6 +66,9 @@ class Response
         }
 
         $this->getContainer()->get('connection')->writeln($this->__toString());
+        $this->getContainer()->get('dispatcher')->dispatch('post.response');
+
+        return true;
     }
 
     public function __toString()

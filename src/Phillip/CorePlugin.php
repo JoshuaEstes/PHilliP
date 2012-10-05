@@ -19,9 +19,9 @@ class CorePlugin extends AbstractPlugin
     static public function getSubscribedEvents()
     {
         return array(
-            'connect'         => array('onConnect'),
-            'command.ping'    => array('onPing'),
-            'command.privmsg' => array('onPrivmsg'),
+            'connect'         => array('onConnect', 1),
+            'command.ping'    => array('onPing', 1),
+            'command.privmsg' => array('onPrivmsg',1),
         );
     }
 

@@ -60,29 +60,46 @@ class Application
     {
         $this->container->get('connection')->connect();
 
+        $manager = new \Spork\ProcessManager(new \Spork\EventDispatcher\EventDispatcher(), true);
+        $container = $this->container;
+        $manager->fork(function() use ($container){
+            do {
+                $message = trim(fgets($container->get('connection')->getStream(), 512));
+                if (empty($message)) {
+                    continue;
+                }
+                $container->get('output')->writeln($message);
+                $container->get('dispatcher')->dispatch('post.request');
+
+                $event = FilterMessageEvent::create()
+                    ->setRequest($container->get('request')->setMessage($message))
+                    ->setResponse($container->get('response'))
+                    ->setContainer($container);
+
+                $container->get('dispatcher')->dispatch('irc.message', $event);
+
+                $command = $event->getRequest()->getCommand();
+                $container->get('dispatcher')->dispatch('command.'.$command, $event);
+
+                if ($event->getResponse()->isValid()) {
+                    $response = (string) $event->getResponse();
+                    $container->get('output')->writeln($response);
+                    $container->get('connection')->writeln($response);
+                }
+            } while (!feof($container->get('connection')->getStream()));
+        });
+
+        readline_read_history(getenv('HOME').'/.phillip_history');
+        readline_completion_function(array($this, 'autocompleter'));
+
         do {
-            $message = trim(fgets($this->container->get('connection')->getStream(), 512));
-            if (empty($message)) {
-                continue;
+            $line = readline('>>> ');
+            readline_add_history($line);
+            if ($line === 'exit') {
+                $manager->killall();
+                break;
             }
-            $this->container->get('output')->writeln($message);
-
-            $event = FilterMessageEvent::create()
-                ->setRequest($this->container->get('request')->setMessage($message))
-                ->setResponse($this->container->get('response'))
-                ->setContainer($this->container);
-
-            $this->container->get('dispatcher')->dispatch('irc.message', $event);
-
-            $command = $event->getRequest()->getCommand();
-            $this->container->get('dispatcher')->dispatch('command.'.$command, $event);
-
-            if ($event->getResponse()->isValid()) {
-                $response = (string) $event->getResponse();
-                $this->container->get('output')->writeln($response);
-                $this->container->get('connection')->writeln($response);
-            }
-        } while (!feof($this->container->get('connection')->getStream()));
+        } while(true);
     }
 
     /**
@@ -120,6 +137,16 @@ class Application
             }
             $this->container->get('dispatcher')->addSubscriber(new $plugin());
         }
+    }
+
+    protected function postResponse()
+    {
+        $this->container->get('output')->writeln('test');
+    }
+
+    protected function autocompleter($text)
+    {
+        return null;
     }
 
 }
