@@ -19,7 +19,7 @@ class Connection
     {
     }
 
-    public function getInstance()
+    public static function getInstance()
     {
         return new self();
     }

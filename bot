@@ -1,7 +1,7 @@
 #!/usr/bin/env php
 <?php
 set_time_limit(0);
-ob_implicit_flush();
+//ob_implicit_flush();
 require __DIR__ . '/vendor/autoload.php';
 $bot = new Phillip\Application();
 $bot->run();

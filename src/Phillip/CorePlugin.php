@@ -19,9 +19,9 @@ class CorePlugin extends AbstractPlugin
     static public function getSubscribedEvents()
     {
         return array(
-            'connect'         => array('onConnect', 1),
-            'command.ping'    => array('onPing', 1),
-            'command.privmsg' => array('onPrivmsg',1),
+            'connect'         => array('onConnect', 0),
+            'command.ping'    => array('onPing', 0),
+            'command.privmsg' => array('onPrivmsg', 0),
         );
     }
 
@@ -65,9 +65,10 @@ class CorePlugin extends AbstractPlugin
      */
     public function onPrivmsg(FilterMessageEvent $event)
     {
-        $request = $event->getRequest();
+        $request   = $event->getRequest();
         $container = $event->getContainer();
-        $container->get('output')->writeln(array(
+        $logger = $container->get('logger');
+        $message = array(
             sprintf('prefix: %s', $request->getPrefix()),
             sprintf('command: %s', $request->getCommand()),
             sprintf('middle: %s', $request->getMiddle()),
@@ -79,7 +80,11 @@ class CorePlugin extends AbstractPlugin
             sprintf('is User: %s', $request->isUser() ? 'yes' : 'no'),
             sprintf('From Server: %s', $request->isFromServer() ? 'yes' : 'no'),
             sprintf('From User: %s', $request->isFromUser() ? 'yes' : 'no'),
-        ));
+        );
+
+        foreach ($message as $msg) {
+            $logger->addDebug($msg);
+        }
     }
 
 }

@@ -9,6 +9,7 @@ use Phillip\Response;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\Console\Output\StreamOutput;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Reference;
 use Monolog\Logger;
 
 /**
@@ -36,11 +37,11 @@ class Application
         $this->container
             ->register('logger.handler', 'Monolog\Handler\StreamHandler')
             ->addArgument('logs/phillip.log')
-            ->addArgument(Logger::INFO);
+            ->addArgument(Logger::DEBUG);
         $this->container
-            ->register('logger')
+            ->register('logger', 'Monolog\Logger')
             ->addArgument('phillip')
-            ->addMethodCall('setHandler', array('%logger.handler%'));
+            ->addMethodCall('pushHandler', array(new Reference('logger.handler')));
         $this->container
             ->register('connection', 'Phillip\Connection')
             ->setFactoryClass('Phillip\Connection')
@@ -60,7 +61,7 @@ class Application
     {
         $this->container->get('connection')->connect();
 
-        $manager = new \Spork\ProcessManager(new \Spork\EventDispatcher\EventDispatcher(), true);
+        $manager   = new \Spork\ProcessManager(new \Spork\EventDispatcher\EventDispatcher(), true);
         $container = $this->container;
         $manager->fork(function() use ($container){
             do {
@@ -68,6 +69,7 @@ class Application
                 if (empty($message)) {
                     continue;
                 }
+                $container->get('logger')->info($message);
                 $container->get('output')->writeln($message);
                 $container->get('dispatcher')->dispatch('post.request');
 
@@ -83,23 +85,12 @@ class Application
 
                 if ($event->getResponse()->isValid()) {
                     $response = (string) $event->getResponse();
+                    $container->get('logger')->info($response);
                     $container->get('output')->writeln($response);
                     $container->get('connection')->writeln($response);
                 }
             } while (!feof($container->get('connection')->getStream()));
         });
-
-        readline_read_history(getenv('HOME').'/.phillip_history');
-        readline_completion_function(array($this, 'autocompleter'));
-
-        do {
-            $line = readline('>>> ');
-            readline_add_history($line);
-            if ($line === 'exit') {
-                $manager->killall();
-                break;
-            }
-        } while(true);
     }
 
     /**
